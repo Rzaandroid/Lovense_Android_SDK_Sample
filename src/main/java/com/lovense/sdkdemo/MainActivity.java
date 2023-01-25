@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,7 +33,11 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 /**
  *  Created by Lovense on 2019/5/14
@@ -42,15 +47,17 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private View start;
-    private TextView stop,title,textView2,name;
+    static TextView stop,title,textView2,name;
 
-    String gender,pref,id,toyId;
+    static String gender,pref,id,toyId;
 
     PrintWriter output;
     BufferedReader input;
     Socket socket;
 
-    private EditText phone;
+    static EditText phone;
+
+    //RadioGroup radioGroup = (RadioGroup)findViewById(R.id.groupradio);
 
     private RxPermissions rxPermissions;
 
@@ -83,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
 //        Lovense.getInstance(getApplication()).setSearchToyListener();
 
         rxPermissions = new RxPermissions(this);
+
         start.setOnClickListener(new View.OnClickListener() {
            @Override
            public void onClick(View v) {
@@ -109,6 +117,25 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+        RadioGroup rg = findViewById(R.id.groupradiogender);
+        RadioGroup rg2 = findViewById(R.id.groupradiopref);
+
+        rg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+        //    @Override
+            public void onCheckedChanged(RadioGroup radioGroup, int i) {
+                RadioButton rb = findViewById(rg.getCheckedRadioButtonId());
+                gender = rb.getText().toString();
+            }
+        });
+
+        rg2.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            //    @Override
+            public void onCheckedChanged(RadioGroup radioGroup, int i) {
+                RadioButton rb2 = findViewById(rg.getCheckedRadioButtonId());
+                pref = rb2.getText().toString();
+            }
+        });
     }
 
     private void scanDev() {
@@ -121,10 +148,32 @@ public class MainActivity extends AppCompatActivity {
             public void onSearchToy(LovenseToy lovenseToy)
             {
                 Toast.makeText(MainActivity.this, "connect！", Toast.LENGTH_SHORT).show();
-                connectToServer();
+                //connectToServer();
                 Toast.makeText(MainActivity.this, "connected！", Toast.LENGTH_SHORT).show();
                 addDevice(lovenseToy);
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    Handler handle = new Handler() {
+                        @Override
+                        public void publish(LogRecord logRecord) {
+
+                        }
+
+                        @Override
+                        public void flush() {
+
+                        }
+
+                        @Override
+                        public void close() throws SecurityException {
+
+                        }
+                    };
+                    Logger.getGlobal().addHandler(handle);
+                }
             }
+
+
 
             @Override
             public void finishSearch() {
@@ -216,6 +265,7 @@ public class MainActivity extends AppCompatActivity {
     public void onRadioButtonClicked(View view) {
         // Is the button now checked?
         boolean checked = ((RadioButton) view).isChecked();
+        boolean checked2 = ((RadioButton) view).isChecked();
 
         // Check which radio button was clicked
         switch(view.getId()) {
@@ -224,45 +274,20 @@ public class MainActivity extends AppCompatActivity {
                     gender = "Male";
                     break;
             case R.id.radioButton2:
-                if (checked)
+                if (!checked)
                     gender = "Female";
                     break;
             case R.id.radioButton3:
-                if (checked)
+                if (checked2)
                     pref = "Male";
                     break;
             case R.id.radioButton4:
-                if (checked)
+                if (!checked2)
                     pref = "Female";
                     break;
         }
     }
 
-    protected void connectToServer()
-    {
-        new Thread(new Runnable(){
-            @Override
-            public void run() {
-                try {
-                    socket = new Socket("192.168.1.191", 50000);
-                    output = new PrintWriter(socket.getOutputStream());
-                    input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    output.write(String.valueOf(name.getText()));
-                    //output.write(String.valueOf(phone.getText()));
-                    //output.write(gender);
-                    //output.write(pref);
-                    //output.write(id);
-                    //output.write(toyId);
-                    output.flush();
-                    output.close();
-                    input.close();
-                    socket.close();
-                }
-                catch (Exception ex) {
-                    Toast.makeText(MainActivity.this, ex.toString(), Toast.LENGTH_SHORT).show();
-                }
-            }
-        }).start();
-    }
+
 }
 

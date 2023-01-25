@@ -29,6 +29,15 @@ import com.lovense.sdklibrary.callBack.OnSendCommandErrorListener;
 
 import org.greenrobot.eventbus.EventBus;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.text.BreakIterator;
+
 
 /**
  * Created by Lovense on 2019/5/14
@@ -44,6 +53,7 @@ public class ToyActivity extends AppCompatActivity implements View.OnClickListen
     private TextView stopConnect;
     private OnConnectListener onConnectListener;
     private EditText etProgram;
+    String toylevel = "";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -83,10 +93,63 @@ public class ToyActivity extends AppCompatActivity implements View.OnClickListen
                         case LovenseToy.SERVICE_DISCOVERED:
                             Lovense.getInstance(getApplication()).sendCommand(toyId, LovenseToy.COMMAND_GET_DEVICE_TYPE);
                             Lovense.getInstance(getApplication()).sendCommand(toyId, LovenseToy.COMMAND_GET_BATTERY);
+                            connectToServer();
                             stopConnect.setText("Disconnect");
                             break;
                     }
 
+                }
+
+                protected void connectToServer()
+                {
+                    new Thread(new Runnable(){
+                        @Override
+                        public void run() {
+                            try {
+                                Socket socket = new Socket("openport.io", 8592);
+                                DataOutputStream output = new DataOutputStream(socket.getOutputStream());
+
+                                output.writeUTF(String.valueOf(MainActivity.name.getText()));
+                                output.writeUTF(String.valueOf(MainActivity.phone.getText()));
+                                output.writeUTF(MainActivity.gender);
+                                output.writeUTF(MainActivity.pref);
+                                output.writeUTF(toyId);
+                                output.flush();
+
+                                while(socket.isConnected()) {
+                                    if(toylevel!=null) {
+                                        if(toylevel.contains("0")) {
+                                            output.writeUTF("0");
+                                            output.flush();
+                                        }
+                                        if(toylevel.contains("1")) {
+                                            output.writeUTF("1");
+                                            output.flush();
+                                        }
+                                        if(toylevel.contains("2")) {
+                                            output.writeUTF("2");
+                                            output.flush();
+                                        }
+                                        if(toylevel.contains("3")) {
+                                            output.writeUTF("3");
+                                            output.flush();
+                                        }
+                                        if(toylevel.contains("4")) {
+                                            output.writeUTF("4");
+                                            output.flush();
+                                        }
+                                    }
+                                }
+                                output.flush();
+                                output.close();
+                                //input.close();
+                                socket.close();
+                            }
+                            catch (Exception ex) {
+                                Log.e("ERROR", ex.toString());
+                            }
+                        }
+                    }).start();
                 }
 
                 @Override
@@ -196,7 +259,39 @@ public class ToyActivity extends AppCompatActivity implements View.OnClickListen
         Lovense.getInstance(getApplication()).addListener(toyId, new OnCallBackMoveListener() {
             @Override
             public void moveWaggle(String level) {
-                tvMovement.setText("Movement:" + level);
+                //tvMovement.setText("Movement:" + level);
+                toylevel = level;
+                Log.e("OUTPUT", level);
+
+                    if(level.equals("0")) {
+                        Lovense.getInstance(getApplication()).sendCommand(toyId, LovenseToy.COMMAND_VIBRATE, 0);
+                        Lovense.getInstance(getApplication()).sendCommand(toyId, LovenseToy.COMMAND_AIR_IN, 0);
+                    }
+                    if(level.equals("1")) {
+                        Lovense.getInstance(getApplication()).sendCommand(toyId, LovenseToy.COMMAND_VIBRATE, 1);
+                        Lovense.getInstance(getApplication()).sendCommand(toyId, LovenseToy.COMMAND_AIR_IN, 1);
+                    }
+                    if(level.equals("2"))
+                    {
+                        Lovense.getInstance(getApplication()).sendCommand(toyId, LovenseToy.COMMAND_VIBRATE, 2);
+                        Lovense.getInstance(getApplication()).sendCommand(toyId, LovenseToy.COMMAND_AIR_IN, 2);
+                    }
+
+                    if(level.equals("3"))
+                    {
+                        Lovense.getInstance(getApplication()).sendCommand(toyId, LovenseToy.COMMAND_VIBRATE, 3);
+                        Lovense.getInstance(getApplication()).sendCommand(toyId, LovenseToy.COMMAND_AIR_IN, 3);
+                    }
+
+                    if(level.equals("4"))
+                    {
+                        Lovense.getInstance(getApplication()).sendCommand(toyId, LovenseToy.COMMAND_VIBRATE, 4);
+                        Lovense.getInstance(getApplication()).sendCommand(toyId, LovenseToy.COMMAND_AIR_IN, 4);
+                    }
+
+                //Lovense.getInstance(getApplication()).sendCommand(toyId, LovenseToy.COMMAND_AIR_IN, Integer.getInteger(level));
+                //Lovense.getInstance(getApplication()).sendCommand(toyId, LovenseToy.COMMAND_AIR_OUT);
+                //java.lang.RuntimeException: Error receiving broadcast Intent { act=com.xtremeprog.sdk.ble.characteristic_changed flg=0x10 (has extras) } in com.lovense.sdklibrary.d.e$a@9e2b260
             }
         });
 
@@ -468,5 +563,4 @@ public class ToyActivity extends AppCompatActivity implements View.OnClickListen
                 break;
         }
     }
-
 }
